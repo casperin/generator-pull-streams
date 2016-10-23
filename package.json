@@ -1,8 +1,27 @@
 {
-  "scripts": {
-    "test": "tape ./test"
-  },
-  "devDependencies": {
+  "name": "generator-pull-stream",
+  "version": "0.0.1",
+  "description": "pull-stream implementation based on generators.",
+  "main": "index.js",
+  "dependencies": {
     "tape": "^4.6.2"
-  }
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casperin/generator-pull-streams.git"
+  },
+  "keywords": [
+    "pull-stream",
+    "generator"
+  ],
+  "author": "Gorm Casper",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/casperin/generator-pull-streams/issues"
+  },
+  "homepage": "https://github.com/casperin/generator-pull-streams#readme"
 }

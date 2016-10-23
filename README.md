@@ -1,5 +1,6 @@
 # Generator pull streams
 
+
 This is a possible implementation of how pull-streams would work with
 generators (arrived with Node 6). It is very much a proof of concept, rather
 than a full implementation.
@@ -57,8 +58,53 @@ Above you see four different helper functions being used: `put`, `take`,
 * You can communicate with a source when a stream `take`s a value, by passing
   it into the take: `const data = yield take('give me something great!')`.
 
+
+## Unit testing your streams
+
+Testing your streams is really easy. Let's have a look at `A` from above and
+see how we might go about testing it.
+
+Notice that we are effectively testing that we are calling the api with the
+correct url, without actually calling it.
+
+```js
+function * A ({cps, put}) {
+  let id = 0
+  while (true) {
+    const data = yield cps(api, `/some/url/${id}`)
+    yield put(data.thing)
+    id++
+  }
+}
+
+// in our test file
+const tape = require('tape')
+const api = require('./api')
+const {pull} = require('generator-pull-stream')
+
+tape('stream A', t => {
+  const a = A(pull.effects)
+
+  const actual1 = a.next().value
+  const expected1 = pull.effects.cps(api, '/some/url/0')
+  t.deepEqual(actual1, expected1)
+
+  const actual2 = a.next({thing: 'foo'}).value
+  const expected2 = pull.effects.put('foo')
+  t.deepEqual(actual2, expected2)
+
+  const actual3 = a.next().value
+  const expected3 = pull.effects.cps(api, '/some/url/1')
+  t.deepEqual(actual3, expected3)
+
+  t.end()
+})
+```
+
 ## License
 
 MIT
+
+
 
 
