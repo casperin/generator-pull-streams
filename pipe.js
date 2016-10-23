@@ -1,47 +1,65 @@
 module.exports = (...streams) => streams.reduce(pipe)
 
-const pipe = (sourceGen, destGen) => {
+/**
+ * `pipe` is a reducer function in that it takes two streams and turn them into
+ * one. More specifically it takes a source (that does not take any values) and
+ * any other stream and turn them into another source.
+ */
+const pipe = (source, destination) => {
   const piped = function * (effects) {
-    // Support passing in any type of generator or iterator as the source
-    const source = typeof sourceGen === 'function'
-      ? sourceGen(effects)
-      : function * () { for (const value of sourceGen) yield effects.put(value) }()
+    const dest = destination(effects)
+    const src = typeof source === 'function'
+      ? source(effects)
+      : (function * () { yield * source }()) // [] → iterable
 
-    const dest = destGen(effects)
+    let destReturnValue, srcReturnValue // communication between loops
 
-    let destReturnValue, sourceReturnValue
-
-    runDest: while (true) {
+    /**
+     * Run through destination and let `pull` handle everything that isn't a
+     * `take` effect by yielding them. Once we have a `take`, we continue to
+     * the source searching for a `put` effect with a value and break out,
+     * again letting the `pull` deal with everything that isn't a `put`. If
+     * any of the generators ends, so does this function.
+     */
+    while (true) {
       const destData = dest.next(destReturnValue)
       if (destData.done) return
-      const type = destData.value && destData.value.type
+      const {type, value} = getTypeAndValue(destData, effects)
 
-      if (type === 'put' || type === 'call' || type === 'cps' || type === 'promise') {
-        destReturnValue = yield destData.value
-        continue runDest
+      if (type !== 'take') {
+        destReturnValue = yield value
+        continue // no take yet, so we run dest loop again
       }
 
-      runSource: while (true) {
-        const sourceData = source.next(sourceReturnValue)
-        if (sourceData.done) return
-        const type = sourceData.value && sourceData.value.type
+      // enable destination to communicate with the source in the take yield,
+      // by yield take('foo')
+      if (value) srcReturnValue = value.value
+
+      while (true) {
+        const srcData = src.next(srcReturnValue)
+        if (srcData.done) return
+        const {type, value} = getTypeAndValue(srcData, effects)
 
         if (type === 'put') {
-          destReturnValue = sourceData.value.value
-          continue runDest
+          destReturnValue = value.value
+          break // got a value for dest, so we break out of the source loop
         }
 
-        if (type === 'call' || type === 'cps' || type === 'promise') {
-          sourceReturnValue = yield sourceData.value
-          continue runSource
-        }
-
-        throw new Error('A source has nothing to yield values from.')
+        // anything else, we let the `pull` deal with
+        srcReturnValue = yield srcData.value
       }
     }
   }
 
-  Object.defineProperty(piped, 'name', {value: `${sourceGen.name || 'unknown source'} → ${destGen.name}`});
+  Object.defineProperty(piped, 'name', {
+    value: `${source.name || 'unknown source'} → ${destination.name || 'unknown destination'}`
+  })
 
   return piped
+}
+
+const getTypeAndValue = (data, effects) => {
+  if (data.value && data.value.type) return {type: data.value.type, value: data.value}
+  if (data.value !== undefined) return {type: 'put', value: effects.put(data.value)}
+  return {type: 'take'}
 }
