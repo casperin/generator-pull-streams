@@ -39,7 +39,7 @@ Pull will start pulling values through. If any of them ends then the whole
 stream stops.
 
 Above you see four different helper functions being used: `put`, `take`,
-`call`, and `cps`. There is one more: `promise`.
+`call`, and `cps`. There is one more: `resolve`.
 
 * `yield put(value)` is used to pass a value on to the next generator in the
   pipe (in this case, from `A` to `B`).
@@ -50,7 +50,7 @@ Above you see four different helper functions being used: `put`, `take`,
   expected to be syncronous.
 * `yield cps(fn, arg1, arg2, ...)` is to call a node style "error first" type
   function that takes a `yield callback` as its last parameter.
-* `yield promise(fn, arg1, arg2, ...)` is the last one, and expects a promise
+* `yield resolve(fn, arg1, arg2, ...)` is the last one, and expects a promise
   to call and resolve for you.
 
 ## More words
