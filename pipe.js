@@ -1,3 +1,11 @@
+const {isEffect, isEffectOfType} = require('./pull')
+
+// Helper to allow users to yield without using `take` and `put`.
+const valueToEffect = (value, effects) => {
+  if (isEffect(value)) return value
+  return value === undefined ? effects.take() : effects.put(value)
+}
+
 module.exports = (...streams) => streams.reduce(pipe)
 
 /**
@@ -22,31 +30,31 @@ const pipe = (source, destination) => {
      * any of the generators ends, so does this function.
      */
     while (true) {
-      const destData = dest.next(destReturnValue)
-      if (destData.done) return
-      const {type, value} = getTypeAndValue(destData, effects)
+      const {value, done} = dest.next(destReturnValue)
+      if (done) return
+      const effect = valueToEffect(value, effects)
 
-      if (type !== 'take') {
-        destReturnValue = yield value
+      if (!isEffectOfType('take', effect)) {
+        destReturnValue = yield effect
         continue // no take yet, so we run dest loop again
       }
 
       // enable destination to communicate with the source in the take yield,
       // by yield take('foo')
-      if (value) srcReturnValue = value.value
+      srcReturnValue = effect.value
 
       while (true) {
-        const srcData = src.next(srcReturnValue)
-        if (srcData.done) return
-        const {type, value} = getTypeAndValue(srcData, effects)
+        const {value, done} = src.next(srcReturnValue)
+        if (done) return
+        const effect = valueToEffect(value, effects)
 
-        if (type === 'put') {
-          destReturnValue = value.value
+        if (isEffectOfType('put', effect)) {
+          destReturnValue = effect.value
           break // got a value for dest, so we break out of the source loop
         }
 
         // anything else, we let the `pull` deal with
-        srcReturnValue = yield srcData.value
+        srcReturnValue = yield effect
       }
     }
   }
@@ -56,10 +64,4 @@ const pipe = (source, destination) => {
   })
 
   return piped
-}
-
-const getTypeAndValue = (data, effects) => {
-  if (data.value && data.value.type) return {type: data.value.type, value: data.value}
-  if (data.value !== undefined) return {type: 'put', value: effects.put(data.value)}
-  return {type: 'take'}
 }

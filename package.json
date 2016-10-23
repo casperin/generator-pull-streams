@@ -4,6 +4,7 @@
   "description": "pull-stream implementation based on generators.",
   "main": "index.js",
   "dependencies": {
+    "generator-workhorse": "0.0.1",
     "tape": "^4.6.2"
   },
   "devDependencies": {},
