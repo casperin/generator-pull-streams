@@ -1,9 +1,15 @@
 # Generator pull streams
 
-
 This is a possible implementation of how pull-streams would work with
-generators (arrived with Node 6). It is very much a proof of concept, rather
-than a full implementation.
+generators (arrived with Node 6).
+
+## Install
+
+```sh
+npm install generator-node-stream
+```
+
+## Words
 
 ```js
 const {pipe, pull} = require('generator-pull-streams')
@@ -47,7 +53,7 @@ Above you see four different helper functions being used: `put`, `take`,
 * `yield promise(fn, arg1, arg2, ...)` is the last one, and expects a promise
   to call and resolve for you.
 
-## Other
+## More words
 
 * Values flow from left to right (from `A` to `B` in the above example).
 * `pipe` takes any number of streams, not just two.
@@ -104,7 +110,4 @@ tape('stream A', t => {
 ## License
 
 MIT
-
-
-
 
