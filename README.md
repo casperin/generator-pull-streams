@@ -6,7 +6,7 @@ generators (arrived with Node 6).
 ## Install
 
 ```sh
-npm install generator-node-stream
+npm install generator-pull-stream
 ```
 
 ## Words
