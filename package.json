@@ -4,11 +4,13 @@
   "description": "pull-stream implementation based on generators.",
   "main": "index.js",
   "dependencies": {
-    "generator-workhorse": "0.0.1"
+    "generator-workhorse": "0.0.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "^4.6.2"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape test"
   },
   "repository": {
     "type": "git",
