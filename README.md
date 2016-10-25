@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/casperin/generator-pull-streams.svg?style=svg)](https://circleci.com/gh/casperin/generator-pull-streams)
+
 # Generator pull streams
 
 This is a possible implementation of how pull-streams would work with
