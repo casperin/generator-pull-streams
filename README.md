@@ -5,6 +5,8 @@
 This is a possible implementation of how pull-streams would work with
 generators (arrived with Node 6).
 
+Value flows through the stream as they are being pulled out from the end.
+
 ## Install
 
 ```sh
@@ -41,19 +43,22 @@ Pull will start pulling values through. If any of them ends then the whole
 stream stops.
 
 Above you see four different helper functions being used: `put`, `take`,
-`call`, and `cps`. There is one more: `resolve`.
+`call`, and `cps`. There are tow more: `resolve`, and `wait`.
 
 * `yield put(value)` is used to pass a value on to the next generator in the
   pipe (in this case, from `A` to `B`).
+  * You can also just do `yield value` as a shortcut.
 * `yield take([value])` is used to fetch the next value. Notice that the very
   first stream can not `yield` a `take` since it has nowhere to take a value
   from.
+  * Shortcut is to just do `yield` without anything.
 * `yield call(fn, arg1, arg2, ...)` is to call functions. Functions here are
   expected to be syncronous.
 * `yield cps(fn, arg1, arg2, ...)` is to call a node style "error first" type
   function that takes a `yield callback` as its last parameter.
 * `yield resolve(fn, arg1, arg2, ...)` is the last one, and expects a promise
   to call and resolve for you.
+* `yield wait(2000)` pauses for two seconds, then resumes.
 
 ## More words
 
@@ -65,6 +70,9 @@ Above you see four different helper functions being used: `put`, `take`,
   "sub stream" and pass it around to be included elsewhere.
 * You can communicate with a source when a stream `take`s a value, by passing
   it into the take: `const data = yield take('give me something great!')`.
+* Streams will not start running until some calls `pull` on them. As such, they
+  are pure (calling `pipe` with the same arguments will always give you the
+  same value back. No side effects or randomness).
 
 
 ## Unit testing your streams
@@ -108,6 +116,8 @@ tape('stream A', t => {
   t.end()
 })
 ```
+
+The full `stream` from above can be tested in the same manner.
 
 ## License
 
