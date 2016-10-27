@@ -197,10 +197,10 @@ Pass `{cps: true}` if the function is a node callback style function, or
 
 Reverse of `unique`.
 
-### `log(fn)`
+### `tap(fn)`
 
-Will log every value coming through. You can pass in your custom logger as `fn`
-if you don't like `console.log`.
+Will call `fn` with every value coming through. `fn` defaults to `console.log`
+if nothing is passed in.
 
 
 

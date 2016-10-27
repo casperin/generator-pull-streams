@@ -1,14 +1,14 @@
 const tape = require('tape')
 const {pipe, pull} = require('../../index')
-const log = require('../../util/log')
+const tap = require('../../util/tap')
 
-tape('log', t => {
+tape('tap', t => {
   t.plan(3)
   let m = 1
   const source = [1, 2, 3]
-  const logger = x => {
+  const fn = x => {
     t.equal(x, m++)
   }
-  const stream = pipe(source, log(logger))
+  const stream = pipe(source, tap(fn))
   pull(stream)
 })
