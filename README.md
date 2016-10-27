@@ -75,6 +75,129 @@ Above you see four different helper functions being used: `put`, `take`,
   same value back. No side effects or randomness).
 
 
+## Utils
+
+I've included some helper functions in `/util`.
+
+### `filter(fn, options)`
+
+```js
+const {pipe, pull} = require('generator-pull-stream')
+const filter = require('generator-pull-stream/util/filter')
+
+const source = [1, 2, 3, 4, 5, 6]
+const filterEven = filter(x => x % 2 === 0)
+function * logItAll ({take}) {
+  while (true) {
+    const n = yield take()
+    console.log(n)
+  }
+}
+const stream = pipe(source, filterEven, logItAll)
+pull(stream) // logs 2, 4, 6
+```
+
+Pass in `{cps: true}` as `options` if the filter function is a node callback
+style function.  Pass in `{promise: true}` if the function returns a promise.
+
+### `reject(fn, options)`
+
+The reverse of filter above.
+
+### `find(fn, options)`
+
+Same as find, except it cancels the stream once the first matching item has
+been found.
+
+### `flatten(options)`
+
+By default this will flatten a stream one level (it assumes arrays coming in).
+If you pass `{deep: true}` if you want it to flatten every array that it
+encounters.
+
+### `map(fn, options)`
+
+Maps your function over every value in the stream. Pass `{cps: true}` if the
+function is a node callback style function, or `{promise: true}` if it returns
+a promise.
+
+### `take(n)`
+
+Takes the first `n` values, then cancels the stream.
+
+### `until(fn, options)`
+
+Takes values until the function passes. For instance
+
+```js
+const source = [1, 2, 3, 4, 5]
+const gt3 = x => x > 3
+function * logItAll ({take}) {
+  while (true) {
+    const n = yield take()
+    console.log(n)
+  }
+}
+const stream = pipe(source, until(gt3), logItAll)
+pull(stream) // logs 1, 2, 3
+```
+
+Pass in `{last: true}` if you want the last value also (above that would be
+`4`).
+
+Pass `{cps: true}` if the function is a node callback style function, or
+`{promise: true}` if it returns a promise.
+
+### `scan(fn, options)`
+
+Much like reduce, except it gives you every intermediary value and not just the
+end result.
+
+```js
+const source = [1, 2, 3, 4]
+const add = (a, b) => a + b
+function * logItAll ({take}) {
+  while (true) {
+    const n = yield take()
+    console.log(n)
+  }
+}
+const stream = pipe(source, scan(add), logItAll)
+pull(stream) // logs 1, 3, 6, 10
+```
+
+Pass `{cps: true}` if the function is a node callback style function, or
+`{promise: true}` if it returns a promise.
+
+### `throttle(ms)`
+
+Makes sure value do not pass through faster than the `ms` you passed in.
+
+```js
+const source = [1, 2, 3]
+function * logItAll ({take}) {
+  while (true) {
+    const n = yield take()
+    console.log(n)
+  }
+}
+const stream = pipe(source, throttle(500), logItAll)
+pull(stream) // logs 1, 2, 3 with 500ms interval
+```
+
+### `unique(fn, options)`
+
+Gives you only unique values. The `fn` is for camparing on something specific, for instance you can pass in `x => x.id` to compare on the `ids`.
+
+Pass `{cps: true}` if the function is a node callback style function, or
+`{promise: true}` if it returns a promise.
+
+### `notUnique(fn, options)`
+
+Reverse of `unique`.
+
+
+
 ## Unit testing your streams
 
 Testing your streams is really easy. Let's have a look at `A` from above and
