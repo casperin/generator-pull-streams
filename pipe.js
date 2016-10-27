@@ -35,7 +35,11 @@ const pipe = (source, destination) => {
       const effect = valueToEffect(value, effects)
 
       if (!isEffectOfType('take', effect)) {
-        destReturnValue = yield effect
+        try {
+          destReturnValue = yield effect
+        } catch (e) {
+          dest.throw(e)
+        }
         continue // no take yet, so we run dest loop again
       }
 
@@ -54,7 +58,11 @@ const pipe = (source, destination) => {
         }
 
         // anything else, we let the `pull` deal with
-        srcReturnValue = yield effect
+        try {
+          srcReturnValue = yield effect
+        } catch (e) {
+          src.throw(e)
+        }
       }
     }
   }

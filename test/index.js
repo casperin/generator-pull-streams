@@ -1,4 +1,5 @@
 require('./main')
+require('./errorHandling')
 require('./util/map')
 require('./util/filter')
 require('./util/reject')

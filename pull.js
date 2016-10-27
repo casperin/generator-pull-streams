@@ -15,7 +15,7 @@ module.exports = function pull (stream) {
 
   const next = (err, data) => {
     if (err) {
-      throw err
+      stream.throw(err)
     } else {
       const {done, value} = stream.next(data)
       if (!done) workhorse.handleEffect(value, next)
