@@ -187,7 +187,8 @@ pull(stream) // logs 1, 2, 3 with 500ms interval
 
 ### `unique(fn, options)`
 
-Gives you only unique values. The `fn` is for camparing on something specific, for instance you can pass in `x => x.id` to compare on the `ids`.
+Gives you only unique values. The `fn` is for camparing on something specific,
+for instance you can pass in `x => x.id` to compare on the `ids`.
 
 Pass `{cps: true}` if the function is a node callback style function, or
 `{promise: true}` if it returns a promise.
@@ -195,6 +196,11 @@ Pass `{cps: true}` if the function is a node callback style function, or
 ### `notUnique(fn, options)`
 
 Reverse of `unique`.
+
+### `log(fn)`
+
+Will log every value coming through. You can pass in your custom logger as `fn`
+if you don't like `console.log`.
 
 
 
