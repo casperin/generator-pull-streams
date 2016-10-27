@@ -1,6 +1,6 @@
 {
   "name": "generator-pull-stream",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "pull-stream implementation based on generators.",
   "main": "index.js",
   "dependencies": {
