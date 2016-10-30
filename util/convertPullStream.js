@@ -10,15 +10,16 @@ module.exports = through => function * ({put, take, cps}) {
     }
   }
 
-  const readable = through(read)
-
-  const wrappedReadable = _cb => {
+  const wrap = readable => _cb => {
     cb = _cb
-    readable(null, (abort, output) => {
-      if (abort === true) cb(null, {done: true})
-      else                cb(abort, {output})
+    readable(null, (done, output) => {
+      if (done === true) cb(null, {done})
+      else               cb(done, {output})
     })
   }
+
+  const readable        = through(read)
+  const wrappedReadable = wrap(readable)
 
   while (true) {
     input = yield take()
