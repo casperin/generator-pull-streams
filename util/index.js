@@ -10,5 +10,6 @@ module.exports ={
   tap: require('./tap'),
   throttle: require('./throttle'),
   unique: require('./unique'),
-  until: require('./until')
+  until: require('./until'),
+  convertPullStream: require('./convertPullStream')
 }
