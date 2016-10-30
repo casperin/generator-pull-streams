@@ -202,6 +202,25 @@ Reverse of `unique`.
 Will call `fn` with every value coming through. `fn` defaults to `console.log`
 if nothing is passed in.
 
+### `convertPullStream(through)`
+
+Takes any (I hope) pull-stream `through` and converts into a generator pull
+stream.
+
+```js
+const flatten = require('pull-stream/throughs/flatten')
+const {convertPullStream, tap} = require('generator-pull-stream/util')
+const {pipe, pull} = require('generator-pull-stream')
+
+const source = [[1, 2, 3], [4, 5, 6]]
+const generatorFlatten = convertPullStream(flatten())
+
+const stream = pipe(source, generatorFlatten, tap())
+pull(stream) // logs 1, 2, 3, 4, 5, 6,
+```
+
+This function should be regarded as semi experimental. Any help with testing
+and updating it would be helpful.
 
 
 ## Unit testing your streams
