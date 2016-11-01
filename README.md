@@ -2,10 +2,12 @@
 
 # Generator pull streams
 
-This is a possible implementation of how pull-streams would work with
+This is a possible implementation of how
+[pull-streams](https://github.com/pull-stream/pull-stream) would work with
 generators (arrived with Node 6).
 
 Value flows through the stream as they are being pulled out from the end.
+
 
 ## Install
 
@@ -13,10 +15,18 @@ Value flows through the stream as they are being pulled out from the end.
 npm install generator-pull-stream
 ```
 
-## Words
+
+## How to use
+
+Here's a basic example. `A` "puts" values as they get back from the `api`, and
+`B` "takes" them, one by one, and does its thing to them before passing them
+on. `tap` (which is documented later) basically will pull out as many values as
+it can and `console.log`s them. Once `A`'s `id` reaches `11` it returns, and
+the entire stream ends.
 
 ```js
 const {pipe, pull} = require('generator-pull-streams')
+const {tap} = require('generator-pull-streams/util')
 
 const stream = pipe(
   function * A ({cps, put}) {
@@ -25,15 +35,17 @@ const stream = pipe(
       const data = yield cps(api, `/some/url/${id}`)
       yield put(data.thing)
       id++
+      if (id > 10) return
     }
   },
   function * B ({take, call}) {
     while (true) {
       const thing = yield take()
       const otherThing = yield call(toOtherThing, thing)
-      console.log('Here is the other thing!', otherThing)
+      yield put(otherThing)
     }
-  }
+  },
+  tap()
 )
 
 pull(stream)
@@ -47,22 +59,27 @@ Above you see four different helper functions being used: `put`, `take`,
 
 * `yield put(value)` is used to pass a value on to the next generator in the
   pipe (in this case, from `A` to `B`).
-  * You can also just do `yield value` as a shortcut.
+  * You can also do `yield value` as a shorthand.
 * `yield take([value])` is used to fetch the next value. Notice that the very
   first stream can not `yield` a `take` since it has nowhere to take a value
   from.
-  * Shortcut is to just do `yield` without anything.
+  * Shorthand is to just do `yield` without anything.
 * `yield call(fn, arg1, arg2, ...)` is to call functions. Functions here are
-  expected to be syncronous.
+  expected to be synchronous.
 * `yield cps(fn, arg1, arg2, ...)` is to call a node style "error first" type
   function that takes a `yield callback` as its last parameter.
-* `yield resolve(fn, arg1, arg2, ...)` is the last one, and expects a promise
-  to call and resolve for you.
+  * To catch errors wrap the `yield` in a `try/catch`.
+* `yield resolve(fn, arg1, arg2, ...)` expects a promise to call and resolve
+  for you.
 * `yield wait(2000)` pauses for two seconds, then resumes.
 
-## More words
 
-* Values flow from left to right (from `A` to `B` in the above example).
+## More information
+
+* Values flow from left to right (from `A` to `B` to `tap` in the above
+  example).
+* If any sub-stream returns, the entire stream stops.
+* If any sub-stream throws, the entire stream stops.
 * `pipe` takes any number of streams, not just two.
 * The first argument to `pipe` may be any type of iterator. Including arrays
   and strings.
@@ -75,25 +92,39 @@ Above you see four different helper functions being used: `put`, `take`,
   same value back. No side effects or randomness).
 
 
+## Some words
+
+There is nothing wrong with
+[pull-streams](https://github.com/pull-stream/pull-stream). Theoretically it
+just seemed to be something generators would be suited for; so as part of
+really digging into pull-streams, I decided to implement them with generators.
+While they aren't as mathematically beautiful, I have to say that I like the
+interface of using generators much more.
+
+I should mention the amazing
+[redux-saga](https://github.com/yelouafi/redux-saga) library as inspiration for
+the interface and async model.
+
+
 ## Utils
 
 I've included some helper functions in `/util`.
+
+### `tap(fn)`
+
+Will call `fn` with every value coming through. `fn` defaults to `console.log`
+if nothing is passed in.
 
 ### `filter(fn, options)`
 
 ```js
 const {pipe, pull} = require('generator-pull-stream')
-const filter = require('generator-pull-stream/util/filter')
+const {filter, tap} = require('generator-pull-stream/util')
 
 const source = [1, 2, 3, 4, 5, 6]
 const filterEven = filter(x => x % 2 === 0)
-function * logItAll ({take}) {
-  while (true) {
-    const n = yield take()
-    console.log(n)
-  }
-}
-const stream = pipe(source, filterEven, logItAll)
+const log = tap()
+const stream = pipe(source, filterEven, log)
 pull(stream) // logs 2, 4, 6
 ```
 
@@ -132,13 +163,7 @@ Takes values until the function passes. For instance
 ```js
 const source = [1, 2, 3, 4, 5]
 const gt3 = x => x > 3
-function * logItAll ({take}) {
-  while (true) {
-    const n = yield take()
-    console.log(n)
-  }
-}
-const stream = pipe(source, until(gt3), logItAll)
+const stream = pipe(source, until(gt3), tap())
 pull(stream) // logs 1, 2, 3
 ```
 
@@ -156,13 +181,7 @@ end result.
 ```js
 const source = [1, 2, 3, 4]
 const add = (a, b) => a + b
-function * logItAll ({take}) {
-  while (true) {
-    const n = yield take()
-    console.log(n)
-  }
-}
-const stream = pipe(source, scan(add), logItAll)
+const stream = pipe(source, scan(add), tap())
 pull(stream) // logs 1, 3, 6, 10
 ```
 
@@ -175,13 +194,7 @@ Makes sure value do not pass through faster than the `ms` you passed in.
 
 ```js
 const source = [1, 2, 3]
-function * logItAll ({take}) {
-  while (true) {
-    const n = yield take()
-    console.log(n)
-  }
-}
-const stream = pipe(source, throttle(500), logItAll)
+const stream = pipe(source, throttle(500), tap())
 pull(stream) // logs 1, 2, 3 with 500ms interval
 ```
 
@@ -196,11 +209,6 @@ Pass `{cps: true}` if the function is a node callback style function, or
 ### `notUnique(fn, options)`
 
 Reverse of `unique`.
-
-### `tap(fn)`
-
-Will call `fn` with every value coming through. `fn` defaults to `console.log`
-if nothing is passed in.
 
 ### `convertPullStream(through)`
 
