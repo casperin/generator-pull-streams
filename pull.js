@@ -12,14 +12,10 @@ workhorse.extend([{
 
 module.exports = function pull (stream) {
   stream = stream(module.exports.effects)
-
   const next = (err, data) => {
-    if (err) {
-      stream.throw(err)
-    } else {
-      const {done, value} = stream.next(data)
-      if (!done) workhorse.handleEffect(value, next)
-    }
+    let throwData = err ? stream.throw(err) : null
+    const {done, value} = err ? throwData : stream.next(data)
+    if (!done) workhorse.handleEffect(value, next)
   }
 
   next()

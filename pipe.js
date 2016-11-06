@@ -20,7 +20,10 @@ const pipe = (source, destination) => {
       ? source(effects)
       : (function * () { yield * source }()) // [] → iterable
 
-    let destReturnValue, srcReturnValue // communication between loops
+    let destReturnValue,
+      destThrowData,
+      srcReturnValue,
+      srcThrowData
 
     /**
      * Run through destination and let `pull` handle everything that isn't a
@@ -30,7 +33,8 @@ const pipe = (source, destination) => {
      * any of the generators ends, so does this function.
      */
     while (true) {
-      const {value, done} = dest.next(destReturnValue)
+      const {value, done} = destThrowData || dest.next(destReturnValue)
+      destThrowData = null
       if (done) return
       const effect = valueToEffect(value, effects)
 
@@ -38,7 +42,7 @@ const pipe = (source, destination) => {
         try {
           destReturnValue = yield effect
         } catch (e) {
-          dest.throw(e)
+          destThrowData = dest.throw(e)
         }
         continue // no take yet, so we run dest loop again
       }
@@ -48,7 +52,8 @@ const pipe = (source, destination) => {
       srcReturnValue = effect.value
 
       while (true) {
-        const {value, done} = src.next(srcReturnValue)
+        const {value, done} = srcThrowData || src.next(srcReturnValue)
+        srcThrowData = null
         if (done) return
         const effect = valueToEffect(value, effects)
 
@@ -61,7 +66,7 @@ const pipe = (source, destination) => {
         try {
           srcReturnValue = yield effect
         } catch (e) {
-          src.throw(e)
+          srcThrowData = src.throw(e)
         }
       }
     }
